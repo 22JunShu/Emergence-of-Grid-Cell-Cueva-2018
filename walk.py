@@ -1,19 +1,20 @@
 from torch import randn
 import torch
 from torch import tensor
-# 正方形网格
-# lrange = 5 相当于场地的边长为10
+# square space
+# lrange = 5 length of side = 10
 
 def oneStep(step_direction,y,lrange):
-    step_length = abs(randn(1))
-    step_direction_new = step_direction + randn(1)* torch.pi*2
-    y_new = y + torch.tensor([step_length*torch.cos(step_direction_new),step_length*torch.sin(step_direction_new)],dtype=torch.float)
+    step_length = abs(randn(1))*0.1
+    step_direction_new = step_direction + randn(1)/5
+    y_new = y + torch.tensor([step_length*torch.cos(step_direction_new*torch.pi),step_length*torch.sin(step_direction_new*torch.pi)],dtype=torch.float)
     if abs(y_new[0])< lrange and abs(y_new[1])< lrange:
         return y_new,step_direction_new,step_length
-    else:
-        return oneStep(step_direction,y,lrange) #碰到边界，重新取方向
-def trial(step,lrange): # Number of time steps in one trial
-    position =tensor([0,0])# initial position
+    else: #out of range
+        return oneStep(step_direction,y,lrange) # resample
+def trial(step,lrange): #step: Number of time steps in one trial
+    #position =tensor([0,0])# initial position
+    position = torch.rand((2))*lrange 
     position_list = []
     speed_list = []
     direction_list = []

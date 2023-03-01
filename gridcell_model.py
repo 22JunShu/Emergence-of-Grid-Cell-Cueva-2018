@@ -2,8 +2,8 @@ import torch
 from torch import nn,Tensor
 from torch.nn import Module,Parameter
 import torch.nn.functional as func
-from walk import data_gen
-# CTRNN网络的模型
+import math
+# CTRNN 
 class RNNGridCell(Module):
     def __init__(self,input_size,hidden_size,output_size) -> None:
         super(RNNGridCell,self).__init__()
@@ -14,10 +14,22 @@ class RNNGridCell(Module):
         self.weight_in = Parameter(Tensor(hidden_size,input_size))
         self.weight_out = Parameter(Tensor(output_size,hidden_size))
         self.bias = Parameter(Tensor(hidden_size))
-    def forward(self,input,xu):
+        self.reset_parameters()
+    def reset_parameters(self):
+        stdv_rec = 1.5/ math.sqrt(self.hidden_size)
+        self.weight_rec.data.normal_(stdv_rec)
+        #stdv_in = 1/math.sqrt(2)
+        #self.weight_in.data.normal_(stdv_in)
+        nn.init.orthogonal_(self.weight_rec)
+        stdv_out = 1/math.sqrt(self.hidden_size)
+        #self.weight_out.data.normal_(stdv_out)
+    def forward(self,input,xu): 
+        # tau*dx/dt = -x + W_rec*u + W_in*I + b + noise ;time step = tau/10
+        # x_{t+1} - x_t = -0.1x_t + 0.1(W_rec*u_t + W_in*I_t + noise)
+        # x_{t+1} = 0.9x_t + 0.1 delta
         x,u = xu
-        delta = func.linear(input,self.weight_in,self.bias) + func.linear(u,self.weight_rec) + torch.randn(self.hidden_size)
-        x = 0.9*x + 0.1*(delta + torch.randn(self.hidden_size))
+        delta = func.linear(input,self.weight_in,self.bias) + func.linear(u,self.weight_rec) + 0.01*torch.randn(self.hidden_size)
+        x = 0.9*x + 0.1*delta
         u = torch.tanh(x)
         y = func.linear(u,self.weight_out)
         return x,u,y
