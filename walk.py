@@ -1,24 +1,32 @@
-from torch import randn
+from torch import randn,rand
 import torch
 from torch import tensor
 # square space
 # lrange = 5 length of side = 10
-
+def reStep(y,lrange):
+    step_length = abs(randn(1))*0.1
+    step_direction_new = (rand(1)-0.5)*2
+    y_new = y + torch.tensor([step_length*torch.cos(step_direction_new*torch.pi),step_length*torch.sin(step_direction_new*torch.pi)],dtype=torch.float)
+    if abs(y_new[0])< lrange and abs(y_new[1])< lrange:
+        return y_new,step_direction_new,step_length
+    else:
+        return reStep(y,lrange)
 def oneStep(step_direction,y,lrange):
     step_length = abs(randn(1))*0.1
-    step_direction_new = step_direction + randn(1)/5
+    step_direction_new =step_direction + randn(1)/20 # controls the probability of straight runs
+    step_direction_new = (step_direction_new + 1)%2 -1 # make sure it is beween (-1,1)
     y_new = y + torch.tensor([step_length*torch.cos(step_direction_new*torch.pi),step_length*torch.sin(step_direction_new*torch.pi)],dtype=torch.float)
     if abs(y_new[0])< lrange and abs(y_new[1])< lrange:
         return y_new,step_direction_new,step_length
     else: #out of range
-        return oneStep(step_direction,y,lrange) # resample
+        return reStep(y,lrange) # resample
 def trial(step,lrange): #step: Number of time steps in one trial
-    #position =tensor([0,0])# initial position
-    position = torch.rand((2))*lrange 
+    position =tensor([0,0])# initial position
+    #position = (torch.rand((2))-0.5)*lrange 
     position_list = []
     speed_list = []
     direction_list = []
-    step_direction = tensor(0)
+    step_direction = (rand(1)-0.5)*2 
     for t in range(step):
         position,step_direction,step_length = oneStep(step_direction,position,lrange)
         position_list.append(position)

@@ -17,9 +17,9 @@ class RNNGridCell(Module):
         self.reset_parameters()
     def reset_parameters(self):
         stdv_rec = 1.5/ math.sqrt(self.hidden_size)
-        self.weight_rec.data.normal_(stdv_rec)
-        #stdv_in = 1/math.sqrt(2)
-        #self.weight_in.data.normal_(stdv_in)
+        #self.weight_rec.data.normal_(stdv_rec)
+        stdv_in = 1/math.sqrt(2)
+        self.weight_in.data.normal_(stdv_in)
         nn.init.orthogonal_(self.weight_rec)
         stdv_out = 1/math.sqrt(self.hidden_size)
         #self.weight_out.data.normal_(stdv_out)

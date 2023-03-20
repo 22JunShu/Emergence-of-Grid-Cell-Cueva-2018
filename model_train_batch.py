@@ -3,13 +3,17 @@ from gridcell_model import RNNEC
 from walk import data_gen
 from torch.utils.data import TensorDataset, DataLoader
 
-neuron_num = 100
+neuron_num = 20
+lr_init = 0.0001
+num_epoch = 200
+metabolic_ratio = 0.5
+
 input_dim = 2
 output_dim = 2
-length_range = 10
-time_step = 500
-trial_num = 1000
-batch_size = 50
+length_range = 5
+time_step = 200
+trial_num = 1500
+batch_size = 500
 initial_xu =(torch.full((batch_size,neuron_num),0,dtype=torch.float),torch.full((batch_size,neuron_num),0,dtype=torch.float))
 
 # generate speed and location
@@ -18,15 +22,14 @@ input_data = torch.stack(data[1:],dim = 0)
 input_data = torch.squeeze(input_data).permute(1,2,0)
 y_real = data[0]
 u_zeros = torch.zeros(batch_size,time_step,neuron_num)
-myECModel = RNNEC(input_dim,neuron_num,output_dim)
-
+#myECModel = RNNEC(input_dim,neuron_num,output_dim)
+myECModel = torch.load("myECModel_18.pth")
 # hyperparameters
-lr_init = 1e-4
-optim_wdecay = torch.optim.Adam(myECModel.parameters(), lr=lr_init, weight_decay=1e-2) # weight decay: a penalty for large parameters
+
+optim_wdecay = torch.optim.Adam(myECModel.parameters(), lr=lr_init, weight_decay=0) # weight decay: a penalty for large parameters
 loss_fn = torch.nn.MSELoss() 
 
-num_epoch = 50
-metabolic_ratio = 0.3
+
 test_num = 10
 train_dataset = TensorDataset(input_data, y_real)
 train_loader =  DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -52,7 +55,7 @@ for epoch in range(num_epoch):
 
         loss_total += loss_batch.item()
     loss_total /= len(train_loader)
-    print("train loss:",loss_total,"test position_loss:",loss_pos.item())
+    print("train loss:",loss_total,"train position_loss:",loss_pos.item())
     train_loss.append(loss_total)
 
     myECModel.eval()
@@ -71,20 +74,33 @@ for epoch in range(num_epoch):
         print("test loss:",loss_total_test.item(),"test position loss:",loss_pos_test.item())
         test_loss.append(loss_total_test.item())
 
+
+torch.save(myECModel,"myECModel_18_1.pth")
 import matplotlib.pyplot as plt
+trace_sim = output_y_test[0].numpy().T
+trace_real = y_real_test[0].numpy().T
+# plt.figure(figsize=[11,3])
+# plt.subplot(1,3,1)
+# plt.plot(trace_sim[0],trace_sim[1],label = "sim")
+# plt.xlim((-5,5))
+# plt.ylim((-5,5))
+# plt.legend()
+# plt.subplot(1,3,2)
+# plt.plot(trace_real[0],trace_real[1],label = "real")
+# plt.xlim((-5,5))
+# plt.ylim((-5,5))
+# plt.legend()
+fig = plt.figure(figsize=(11,5))
+ax1 = fig.add_subplot(121)
+ax1.plot(trace_sim[0],trace_sim[1],label = "sim")
+ax1.plot(trace_real[0],trace_real[1],label = "real")
+ax1.set_xlim((-5,5))
+ax1.set_ylim((-5,5))
+plt.legend()
+ax2 = fig.add_subplot(1,2,2)
 plt.plot(train_loss, label='Train Loss')
 plt.plot(test_loss, label='Test Loss')
 plt.xlabel('Iterations')
 plt.ylabel('Loss')
 plt.legend()
 plt.show()
-
-plt.figure()
-trace_sim = output_y_test[0].numpy().T
-trace_real = y_real_test[0].numpy().T
-plt.scatter(trace_sim[0],trace_sim[1],label = "sim")
-plt.plot(trace_real[0],trace_real[1],label = "real")
-plt.legend()
-plt.show()
-
-torch.save(myECModel,"myECModel.pth")
